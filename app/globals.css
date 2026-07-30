@@ -1,26 +1,115 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * AlgoViz design tokens — frozen contract (see CLAUDE.md, docs/ARCHITECTURE.md).
+ * Dark is the default theme with no attribute on <html>. Light is an explicit
+ * override under [data-theme='light'], set later by the Wave 2 theme toggle.
+ *
+ * Order: tokens (dark defaults) -> light theme override -> base elements ->
+ * utilities -> reduced motion -> focus visibility.
+ */
+
+@theme {
+  --color-surface-0: #0b0e14;
+  --color-surface-1: #131722;
+  --color-surface-2: #1a2030;
+  --color-border: #232936;
+  --color-border-strong: #2e3648;
+
+  --color-text: #e6eaf2;
+  --color-muted: #8a94a6;
+  --color-faint: #5a6478;
+
+  --color-hl-active: #22d3ee;
+  --color-hl-compare: #fbbf24;
+  --color-hl-visited: #a78bfa;
+  --color-hl-path: #34d399;
+  --color-hl-inserted: #34d399;
+  --color-hl-removed: #fb7185;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --radius: 3px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+[data-theme='light'] {
+  --color-surface-0: #f7f8fa;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #eef1f6;
+  --color-border: #dde2ea;
+  --color-border-strong: #c4cbd8;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-text: #10141c;
+  --color-muted: #5a6478;
+  --color-faint: #98a1b2;
+
+  --color-hl-active: #0891b2;
+  --color-hl-compare: #b45309;
+  --color-hl-visited: #7c3aed;
+  --color-hl-path: #059669;
+  --color-hl-inserted: #059669;
+  --color-hl-removed: #e11d48;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-surface-0);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * Visualization canvas background: 24px repeating radial-dot grid. The alpha
+ * is baked into the dot color via color-mix rather than set as an `opacity`
+ * on the element — `opacity` would also dim the SVG scene and empty-state
+ * content that later tasks render inside this container.
+ */
+.dot-grid {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--color-faint) 4%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
+[data-theme='light'] .dot-grid {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--color-faint) 6%, transparent) 1px,
+    transparent 1px
+  );
+}
+
+/* Instrument-panel section header motif. */
+.panel-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+    --dur-fast: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-hl-active);
+  outline-offset: 2px;
 }
