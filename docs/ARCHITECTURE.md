@@ -184,7 +184,7 @@ to the barrel it owns, so no two agents ever write the same file.
 
 ## Tech stack
 
-- **Next.js 15 App Router**, TypeScript `strict`, SSG (no server runtime needed)
+- **Next.js 16 App Router** (Turbopack), React 19.2, TypeScript `strict`, SSG (no server runtime needed)
 - **Tailwind CSS v4** with CSS-variable design tokens (enables the light-mode toggle for free)
 - **`motion`** (Framer Motion) — layout animation on SVG nodes keyed by stable id
 - **`d3-force` + `d3-hierarchy`** — layout math only
@@ -354,8 +354,9 @@ complete vertical slice.
 
 **Deliverables**
 
-1. `git init`; commit this document at `docs/ARCHITECTURE.md`.
-2. Next.js 15 + TS strict + Tailwind v4 + Vitest + Playwright scaffold; pnpm.
+1. ~~`git init`; commit this document at `docs/ARCHITECTURE.md`.~~ **Done.**
+2. ~~Next.js + TS strict + Tailwind v4 + Vitest + Playwright scaffold; pnpm.~~ **Done** — see
+   *Scaffold status* below.
 3. `app/globals.css` — the full token set from the Visual Design section.
 4. `lib/engine/types.ts` — `Step`, `SceneGraph`, `Highlight`, `Metrics`, `Frame`. **Frozen after this.**
 5. `lib/engine/tracer.ts` — `trace()`, `Tracer` with `.step()`, `.mark()`, metric accumulation, and
@@ -372,6 +373,28 @@ complete vertical slice.
 **Acceptance:** on `/playground` a user can push values into an array, run bubble sort, step forward
 and backward through every step, and see the pseudocode line, variables, metrics, and cell
 highlights agree at each index.
+
+#### Scaffold status — deliverables 1 & 2 complete
+
+Already on disk and committed; `pnpm verify` passes clean:
+
+| | |
+|---|---|
+| Runtime | Node 22.23.1, pnpm 11.18.0 (via corepack) |
+| Framework | Next.js 16.2.12 (Turbopack), React 19.2.4, TypeScript 5.9 strict |
+| Styling | Tailwind CSS v4 |
+| Animation / layout | `motion` 12.43, `d3-force` 3.0, `d3-hierarchy` 3.1 |
+| Content | `@next/mdx` 16.2 (`pageExtensions` includes md/mdx) |
+| Test | Vitest 4.1 + jsdom + Testing Library; Playwright 1.62 |
+| Scripts | `dev build start lint typecheck test test:watch test:e2e verify` |
+
+Directory skeleton is created with `.gitkeep` placeholders; `CLAUDE.md` at the repo root encodes the
+contract rules so every agent loads them automatically.
+
+`lib/toolchain.test.tsx` is a scaffolding smoke test proving the vitest + jsdom + RTL wiring. Delete
+it once the engine's real tests land.
+
+**Remaining for Stage 0:** deliverables 3–10 (tokens, engine, registry, reference slice).
 
 ### Wave 1 — five agents in parallel
 
