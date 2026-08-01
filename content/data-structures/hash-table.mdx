@@ -1,0 +1,75 @@
+## What it is
+
+A hash table turns a key into an array index. A hash function maps the key to a number, the number
+is reduced modulo the table's capacity, and that slot is where the entry lives. Lookup skips
+searching entirely — it computes the answer's location.
+
+The catch is that many keys map to the same slot. A hash table is therefore two decisions: a hash
+function, and a **collision strategy**.
+
+**The invariant:** every stored key is reachable from `hash(key) mod capacity` by following that
+strategy's rule — walking the chain, or probing forward.
+
+<Demo structure="hash-table" />
+
+## How operations work
+
+### Separate chaining
+
+Each slot holds a list. Colliding keys are appended to the same list, and lookup walks it. Simple,
+tolerant of high load factors, and deletion is trivial — remove the entry from its list.
+
+### Open addressing
+
+Each slot holds at most one entry. On collision, probe forward until a free slot appears. More
+cache-friendly and no per-entry allocation, but it degrades sharply as the table fills, and deletion
+is genuinely tricky — see the pitfalls.
+
+Toggle the strategy in Free Play and run **Collision Walk** on the same keys to compare the step
+counts directly.
+
+### Load factor and resize
+
+The load factor is `size / capacity`. As it climbs, collisions rise and both strategies slow down.
+When it crosses the threshold — 0.75 here — the table doubles and every key is rehashed into the new
+capacity, because `hash(key) mod 8` and `hash(key) mod 16` are different slots.
+
+That rehash is `O(n)`, which is why individual `put` calls are `O(1)` *amortized* rather than
+guaranteed.
+
+## Complexity
+
+<ComplexityTable structure="hash-table" />
+
+The `O(n)` worst cases assume every key collides. With a decent hash function that is vanishingly
+unlikely by accident — but it is achievable on purpose, which is what hash-flooding attacks exploit.
+
+## Algorithms on this structure
+
+**Collision Walk** looks up every stored key and reports the average and worst-case number of steps,
+which makes the difference between the two strategies concrete rather than theoretical.
+
+**Load Factor & Rehash** grows the table and shows, key by key, which entries change slot and which
+happen to land in the same place. Roughly half stay put — a consequence of doubling.
+
+## When to use it, and when not to
+
+Use a hash table as the default associative container. Key-value lookup, sets, memoization, indexes,
+deduplication, counting — if you do not need order, this is the right structure.
+
+Do not use one when you need sorted iteration, range queries, or "next largest" — that is a BST.
+Do not use one when keys share long prefixes and you want prefix queries — that is a trie. And do
+not use one where worst-case latency is a hard requirement, because resize pauses are real.
+
+## Common pitfalls
+
+- **Deleting in open addressing.** Blanking a slot breaks every probe sequence that ran through it,
+  making later keys unreachable. You must either use a tombstone marker or reinsert the following
+  cluster — this implementation does the latter.
+- **Mutating a key after insertion.** The entry is filed under the old hash and becomes unreachable.
+- **A weak hash function.** Clustering turns `O(1)` into `O(n)`. Distribution matters more than
+  speed.
+- **Ignoring the load factor.** A table that never resizes degrades into linked lists, or fills
+  completely and cannot accept another key.
+- **Relying on iteration order.** It is an artifact of capacity and insertion history, and it
+  changes on resize.

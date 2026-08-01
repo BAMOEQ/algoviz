@@ -1,0 +1,63 @@
+## What it is
+
+An array is a single block of memory holding equally sized slots, one after another. That layout is
+the whole story: because every slot is the same width and they sit next to each other, the address
+of index `i` is just `base + i × width`. No searching, no pointer chasing — one multiplication.
+
+**The invariant:** elements occupy a contiguous range of indices `0…n-1` with no gaps. Every
+operation that inserts or removes has to preserve it, which is exactly why the middle is expensive.
+
+<Demo structure="array" />
+
+## How operations work
+
+### Access and update
+
+`get(i)` and `set(i, v)` are arithmetic. They cost the same whether the array holds ten values or
+ten million, and no other structure on this site beats them.
+
+### Push and pop
+
+Appending at the end is free when there is spare capacity. When there is not, the array allocates a
+larger block — usually double — and copies everything across. That copy is `O(n)`, but it happens
+rarely enough that the *amortized* cost of push stays `O(1)`.
+
+### Insert and remove in the middle
+
+Here the invariant bites. Inserting at index `i` means shifting every element from `i` onward one
+slot right before writing; removing means shifting them back left. Both touch `n - i` elements, so
+the closer to the front you work, the more it costs.
+
+Step the demo through an `Insert at` and watch the write count: it is the number of shifted
+elements plus one, every time.
+
+## Complexity
+
+<ComplexityTable structure="array" />
+
+The `O(1) amortized` on append is the entry worth understanding. Any individual push can be `O(n)`
+if it triggers a resize, but averaged over many pushes the doubling strategy makes it constant.
+
+## When to use it, and when not to
+
+Reach for an array when you index more than you insert, when you iterate in order, or when you care
+about cache behaviour — contiguous memory is the fastest thing a CPU can walk.
+
+Reach for something else when you insert or delete at the front repeatedly (a linked list or a deque
+does that in `O(1)`), when you need key lookup rather than positional lookup (a hash table), or when
+you need ordered data with fast insertion (a BST or a heap).
+
+The realistic comparison is against the linked list, and it is less flattering to lists than
+textbooks suggest: lists win on `O(1)` splicing *given a node*, but finding that node is `O(n)` and
+every step is a cache miss.
+
+## Common pitfalls
+
+- **Off-by-one on resize.** The new capacity must be at least `n + 1`, and the copy loop runs to
+  the old length, not the new one.
+- **Shifting in the wrong direction.** Inserting copies right-to-left; removing copies
+  left-to-right. Reverse either and you smear one value across the array.
+- **Assuming `insertAt(n)` is out of range.** Inserting *at* the end is valid — the legal range for
+  insertion is `0…n`, one wider than for access.
+- **Treating amortized as guaranteed.** In latency-sensitive code, a single resize copy can blow a
+  frame budget even though the average is fine.

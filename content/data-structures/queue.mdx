@@ -1,0 +1,62 @@
+## What it is
+
+A queue is a sequence you add to at one end and remove from at the other: first in, first out. It is
+the structure of fairness — whatever waited longest goes next.
+
+The implementation here is a **ring buffer**: a fixed array plus a `head` index and a `size`. The
+tail is computed as `(head + size) mod capacity`, so when it runs off the end of the array it wraps
+around to slot 0 and keeps going.
+
+**The invariant:** the queue occupies `size` slots starting at `head`, wrapping modulo capacity.
+Every slot outside that window is free.
+
+<Demo structure="queue" />
+
+## How operations work
+
+### Enqueue
+
+Write at the tail, then increment `size`. The demo narrates the wraparound explicitly — watch for
+the step that says the tail wrapped, and notice that nothing was copied to make it happen.
+
+### Dequeue
+
+Read at `head`, clear the slot, advance `head` modulo capacity, decrement `size`. Again no shifting:
+the *window* moves rather than the data.
+
+That is the entire point of the ring buffer. A naive array queue that dequeues with `shift()` moves
+every remaining element one slot left, making dequeue `O(n)`. The modulo arithmetic buys `O(1)`.
+
+## Complexity
+
+<ComplexityTable structure="queue" />
+
+## Algorithms on this structure
+
+**Ring buffer walk** traverses from `head` for `size` steps, wrapping as it goes. It exists to make
+one thing visible: the logical order of the queue has nothing to do with the physical order of the
+backing array. Seed the demo and run it — the walk starts at slot 5 and wraps to slot 0 before it
+finishes.
+
+Queues also drive **breadth-first search**, which lives on the graph page: BFS is exactly "visit in
+the order discovered," and a queue is what preserves that order.
+
+## When to use it, and when not to
+
+Use a queue for scheduling, buffering, and any producer/consumer boundary — work items, keystrokes,
+network packets, print jobs. Use it for BFS whenever you need shortest paths by hop count.
+
+Do not use one when the most recent item matters most; that is a stack. Do not use a fixed-capacity
+ring buffer when the load is unbounded and dropping items is unacceptable — you need a growable
+queue or backpressure.
+
+## Common pitfalls
+
+- **Full versus empty ambiguity.** With only `head` and `tail`, both states look identical
+  (`head == tail`). Storing `size` explicitly — as this implementation does — removes the ambiguity;
+  the alternative is wasting one slot.
+- **Forgetting the modulo.** Incrementing `tail` without wrapping silently walks off the array.
+- **Off-by-one on capacity.** The last valid slot is `capacity - 1`; the wrap happens *after* it,
+  not at it.
+- **Confusing FIFO with priority.** A queue does not reorder. If some items must jump the line, you
+  want a heap, not a queue.

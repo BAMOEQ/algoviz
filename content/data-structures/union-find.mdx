@@ -1,0 +1,71 @@
+## What it is
+
+Union-find — also called a disjoint-set union, or DSU — tracks a collection of non-overlapping sets
+under two operations: merge two sets, and ask which set an element belongs to. It answers "are these
+two things connected?" faster than any traversal can.
+
+Each set is a tree, and the set's identity is its **root**. Two elements are in the same set exactly
+when `find` returns the same root for both.
+
+**The invariant:** every element points at a parent, and following parents from any element reaches
+its root in finitely many steps. The trees carry no meaning beyond that — their shape is an
+implementation detail, which is precisely why the algorithm is free to flatten them.
+
+<Demo structure="union-find" />
+
+## How operations work
+
+### Find
+
+Walk parent pointers to the root. The naive version costs the depth of the tree.
+
+### Union by rank
+
+Merging two sets means pointing one root at the other. Choosing badly — always hanging the taller
+tree under the shorter — produces a chain of depth `n`. **Rank** is an upper bound on a tree's
+height, and the rule is simple: hang the lower-rank root under the higher-rank one. Ranks only
+increase when two equal-rank trees merge.
+
+### Path compression
+
+`find` already walked the whole path to the root, so it may as well re-point every node it passed
+directly at that root. The next `find` on any of them is one step. Run the **Path Compression**
+algorithm on the seeded structure and watch the tree visibly flatten.
+
+Together these two optimizations give an amortized cost of `O(α(n))`, where `α` is the inverse
+Ackermann function. For any `n` that fits in the universe, `α(n) < 5`. It is effectively constant.
+
+## Complexity
+
+<ComplexityTable structure="union-find" />
+
+The worst-case column is what you get if you drop one of the two optimizations. Neither alone is
+enough for the near-constant bound.
+
+## Algorithms on this structure
+
+**Union by rank** merges elements pairwise, narrating which root wins and why — and when ranks tie,
+showing the winning root's rank increase.
+
+**Path compression** runs `find` on every element, re-pointing each traversed path at its root, and
+reports how much the maximum depth fell.
+
+## When to use it, and when not to
+
+Use union-find for connectivity questions on a graph that only ever gains edges: Kruskal's MST,
+detecting cycles as you add edges, grouping equivalent items, percolation, and image flood-fill
+labelling.
+
+Do not use it when edges are *removed* — union-find has no undo, and supporting deletion requires a
+substantially more complex structure. Do not use it when you need the actual path between two
+elements; it tells you they are connected, not how.
+
+## Common pitfalls
+
+- **Comparing elements instead of roots.** `a == b` is not the question; `find(a) == find(b)` is.
+- **Confusing rank with size.** Rank is an upper bound on height, not a node count. It stops being
+  exact as soon as path compression starts flattening things — which is fine, because it is only
+  ever used as a merge heuristic.
+- **Incrementing rank on every union.** Rank only rises when two roots of equal rank merge.
+- **Recursive `find` on deep trees.** Before compression kicks in, a recursive implementation can
+  overflow the call stack. The iterative two-pass version here avoids it.

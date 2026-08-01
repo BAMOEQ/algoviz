@@ -1,0 +1,73 @@
+## What it is
+
+A trie stores strings by their characters rather than by their hashes. Each edge is one character,
+and a word is the path from the root down to a node marked as terminal. Words sharing a prefix share
+that part of the path — `car` and `card` traverse the same three nodes before diverging.
+
+**The invariant:** the path from the root to any node spells exactly that node's prefix, and a word
+is present if and only if its final node is marked terminal. `do` and `dog` can both be words even
+though one is a prefix of the other, which is why the terminal marker is separate from having
+children.
+
+<Demo structure="trie" />
+
+## How operations work
+
+### Insert
+
+Walk the word one character at a time, creating nodes only where the path does not already exist,
+then mark the last node terminal. Insert `card` after `car` and only one node is created — the
+demo narrates which nodes were reused.
+
+### Search versus starts with
+
+They are the same walk with different endings. `search` additionally requires the final node to be
+terminal; `startsWith` does not care. That distinction is why the trie can answer "is this a word?"
+and "could this become a word?" at the same cost.
+
+### Delete
+
+Unmark the terminal flag, then prune upward any node that has no children and is not itself a word.
+Pruning is what keeps the trie from accumulating dead branches — but a node shared with another word
+must never be removed. Delete `card` from the seeded trie and nothing is pruned, because `car` still
+needs those nodes.
+
+## Complexity
+
+<ComplexityTable structure="trie" />
+
+Note what is *absent* from that table: `n`, the number of stored words. Every operation costs `O(L)`
+in the length of the key alone. A trie holding a million words looks up a five-character word in
+five steps.
+
+## Algorithms on this structure
+
+**Prefix walk** follows a prefix character by character, stopping early if a character has no child.
+
+**Autocomplete** does that walk and then collects every terminal node beneath the landing point.
+This is the trie's headline use: the expensive part is bounded by the prefix length, not the
+dictionary size.
+
+**Word count** walks the whole trie counting terminal nodes, and reports how many nodes the shared
+prefixes saved compared to storing each word separately.
+
+## When to use it, and when not to
+
+Use a trie for autocomplete, spell checking, prefix matching, IP routing tables, and any dictionary
+where prefix queries matter. Use it when keys share structure — the more shared prefixes, the more
+memory you save.
+
+Do not use one for exact-match lookup of unrelated keys; a hash table is faster and far more
+compact. Do not use one for long keys with no shared prefixes — you pay a node per character and get
+nothing back. And a trie has no natural ordering by value, only by prefix.
+
+## Common pitfalls
+
+- **Confusing "is a prefix" with "is a word".** Without a terminal marker, `do` looks present merely
+  because `dog` was inserted.
+- **Over-pruning on delete.** Removing nodes still needed by another word silently deletes that word
+  too. Only prune childless, non-terminal nodes.
+- **Memory blowup.** A dense child array per node costs one slot per alphabet character whether used
+  or not. Maps or compressed tries (radix trees) fix this.
+- **Case and normalization.** `Cat` and `cat` are different paths. Normalize on the way in, as this
+  implementation does, or accept duplicates.

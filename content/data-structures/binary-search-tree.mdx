@@ -1,0 +1,79 @@
+## What it is
+
+A binary search tree keeps values in sorted order without keeping them in sorted positions. Every
+node has at most two children, and the ordering rule does all the work: everything in a node's left
+subtree is smaller than it, everything in the right subtree is larger.
+
+**The invariant:** for every node, `max(left subtree) < node.value < min(right subtree)`. Note that
+this is stronger than "left child is smaller" — a node deep in the left subtree must still be
+smaller than the ancestor it hangs beneath, which is exactly what the validate algorithm checks.
+
+<Demo structure="binary-search-tree" />
+
+## How operations work
+
+### Search
+
+Compare, then commit to one side. Each comparison discards an entire subtree, which is why search
+costs the tree's *height* rather than its size.
+
+### Insert
+
+Search for where the value would be; when you fall off the bottom, attach there. New values always
+arrive as leaves, so no existing node moves.
+
+### Delete
+
+Three cases, and the third is the interesting one:
+
+- **Leaf** — detach it.
+- **One child** — the child takes its place.
+- **Two children** — you cannot simply remove the node without orphaning a subtree. Instead find its
+  **in-order successor** (the smallest value in the right subtree, i.e. leftmost), copy that value
+  up, and delete the successor node — which by construction has at most one child, reducing case
+  three to case one or two.
+
+Seed the demo and delete `50`. Watch `60` move up: that is the successor swap.
+
+### Min and max
+
+Walk left forever, or right forever. The extremes are always at the edges.
+
+## Complexity
+
+<ComplexityTable structure="binary-search-tree" />
+
+Every average here assumes a reasonably balanced tree. The worst cases are all `O(n)` and they are
+not hypothetical — see the pitfalls.
+
+## Algorithms on this structure
+
+**In-order traversal** (left, node, right) emits a BST's values in sorted order. That is not a
+coincidence; it is the invariant restated as a walk.
+
+**Pre-order** (node, left, right) is the order you would serialize a tree in to rebuild it later.
+**Post-order** (left, right, node) is the order you would free it in — children before parents.
+**Level-order** visits breadth-first using a queue, one depth at a time.
+
+**Height** recurses to the leaves and returns bottom-up; **validate** carries a shrinking
+`(low, high)` window down the tree and fails the moment a node falls outside it.
+
+## When to use it, and when not to
+
+Use a BST when you need ordered operations — range queries, "next largest", in-order iteration —
+alongside fast lookup. A hash table is faster for pure key lookup but has no order at all.
+
+Do not use an unbalanced BST for adversarial or sorted input. In production you want a self-balancing
+variant (red-black, AVL, B-tree), which keeps the height logarithmic by rotating on insert.
+
+## Common pitfalls
+
+- **Inserting sorted data.** Insert 1, 2, 3, 4, 5 in order and you have built a linked list with
+  extra steps: height `n`, search `O(n)`. This is the single most important thing to know about
+  plain BSTs.
+- **Validating locally.** Checking only `left < node < right` at each node passes trees that are
+  invalid — a value can satisfy its parent and still violate a grandparent. Carry the window.
+- **The two-child delete.** Using the predecessor instead of the successor is equally correct, but
+  mixing the two, or forgetting to delete the node you copied from, corrupts the tree.
+- **Duplicates.** Decide once whether they go left, go right, or are rejected. This implementation
+  sends them right; inconsistency here breaks search.

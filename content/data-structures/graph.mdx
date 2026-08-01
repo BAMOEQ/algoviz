@@ -1,0 +1,71 @@
+## What it is
+
+A graph is the general case: a set of nodes and a set of edges joining them. No root, no ordering,
+no constraint on shape. Trees and lists are both special cases of it.
+
+Two toggles change what the algorithms mean:
+
+- **Directed** — edges run one way. `A → B` does not imply `B → A`.
+- **Weighted** — each edge carries a cost. Unweighted graphs behave as though every edge costs 1.
+
+This implementation uses an **adjacency list**: each node knows its neighbours. That is `O(V + E)`
+memory and makes "who is adjacent to this node?" cheap, which is the question every traversal asks.
+
+<Demo structure="graph" />
+
+## How operations work
+
+`Add node` and `Add edge` are `O(1)` appends. `Remove node` is `O(V + E)` because every incident
+edge has to go too — a node with dangling edges is not a graph. Toggling directed or weighted
+reinterprets the existing edges rather than rebuilding them.
+
+## Complexity
+
+<ComplexityTable structure="graph" />
+
+## Algorithms on this structure
+
+**BFS** explores in rings using a queue, so it finds the fewest-*hops* path — but not the cheapest
+one when edges have weights.
+
+**DFS** follows one branch to its end before backtracking, using a stack. Same `O(V + E)`, completely
+different traversal order.
+
+**Dijkstra** is BFS generalized to weights: settle the closest unsettled node, then relax the edges
+leaving it. Relaxing means "is going through this node cheaper than the best route found so far?".
+It requires non-negative weights — with a negative edge, a node settled early may later turn out to
+be reachable more cheaply, and Dijkstra never revisits it.
+
+**Topological sort** (Kahn's algorithm) repeatedly emits a node with no unmet prerequisites. It only
+exists for directed acyclic graphs, and its failure mode is informative: if it cannot place every
+node, the leftovers form a cycle.
+
+**Cycle detection** is DFS that flags an edge back into the current recursion stack. Note the
+distinction between "already visited" and "currently on the stack" — only the latter is a cycle.
+
+**Connected components** floods from each unvisited node; each flood is one component.
+
+**Prim** and **Kruskal** both build a minimum spanning tree. Prim grows one tree outward, always
+taking the cheapest edge leaving it. Kruskal sorts all edges and keeps any that joins two different
+components — which requires a fast "same component?" test, and that is exactly what
+[union-find](/data-structures/union-find) provides.
+
+## When to use it, and when not to
+
+Use a graph whenever relationships are the data: road networks, dependencies, social connections,
+state machines, package resolution, routing.
+
+Prefer an adjacency **matrix** instead when the graph is dense or you need `O(1)` edge existence
+tests — it costs `O(V²)` memory regardless of edge count. Prefer a tree when the structure genuinely
+is hierarchical; the extra generality of a graph costs you the guarantees.
+
+## Common pitfalls
+
+- **Forgetting the visited set.** Any cycle turns traversal into an infinite loop.
+- **Marking visited at the wrong moment.** In BFS, mark when you *enqueue*, not when you dequeue, or
+  a node gets queued several times.
+- **Using BFS for weighted shortest paths.** Fewest hops is not cheapest. Run BFS and Dijkstra on the
+  seeded graph and compare.
+- **Dijkstra with negative weights.** It silently returns wrong answers. Use Bellman-Ford.
+- **Assuming connectivity.** Real graphs come apart. Prim and BFS both cover only the component they
+  start in, which is why the demos report how many nodes they actually reached.

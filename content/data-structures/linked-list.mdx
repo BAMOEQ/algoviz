@@ -1,0 +1,76 @@
+## What it is
+
+A linked list stores order in pointers rather than in memory layout. Each node holds a value and a
+reference to the next node; the last node points at nothing. Nodes can live anywhere in memory, and
+reordering the list means rewriting references, never moving data.
+
+**The invariant:** following `next` from the head reaches every node exactly once and terminates at
+`null` — unless someone has introduced a cycle, which is why cycle detection is a real algorithm and
+not a curiosity.
+
+<Demo structure="linked-list" />
+
+## How operations work
+
+### Push front and pop front
+
+Both are `O(1)`: allocate, point the new node at the old head, move the head. No other node is
+touched. This is the linked list's genuine advantage over an array.
+
+### Push back and pop back
+
+In a singly linked list, both are `O(n)` — you must walk to the tail first. Keeping a tail pointer
+makes `pushBack` constant, but `popBack` still needs the *second-to-last* node, which a singly
+linked list cannot find without walking. A doubly linked list fixes that at the cost of one extra
+pointer per node.
+
+### Insert after and remove
+
+Given a node, splicing is `O(1)`: rewrite two references. Finding the node is `O(n)`. Textbooks quote
+the first number; real code pays both.
+
+### Toggle doubly
+
+Adds a `prev` reference to every node, drawn as the bowed links beneath the row. It buys backward
+traversal and `O(1)` removal given a node, and costs memory plus a second pointer to keep correct on
+every edit.
+
+## Complexity
+
+<ComplexityTable structure="linked-list" />
+
+## Algorithms on this structure
+
+**Traversal** is the baseline: walk until `null`.
+
+**Reversal** re-points every link using three cursors — `prev`, `node`, `next`. It is the classic
+interview question because getting it wrong loses the rest of the list: you must save `next` before
+overwriting `node.next`.
+
+**Floyd's cycle detection** advances a slow pointer one step and a fast pointer two. If the list
+terminates, fast reaches `null`. If it cycles, fast laps slow and they meet. Use `Link tail to` in
+Free Play to create a cycle, then run it.
+
+**Middle node** uses the same trick: when fast reaches the end, slow is halfway. One pass, no length
+counter.
+
+## When to use it, and when not to
+
+Use a linked list when you insert and delete at the front constantly, when you splice nodes you
+already hold references to, or when you need stable references that survive insertion elsewhere.
+
+Otherwise, prefer an array. The honest comparison: lists win asymptotically on front insertion and
+lose badly on everything else. Every hop is a potential cache miss, and each node costs a pointer
+plus allocator overhead. For most real workloads a dynamic array beats a linked list even where the
+big-O suggests otherwise.
+
+## Common pitfalls
+
+- **Losing the rest of the list.** Overwrite `node.next` before saving it and everything after is
+  unreachable.
+- **Forgetting to update the head.** Reversal and front deletion both change which node is the head;
+  updating the links but not the head pointer produces a list that looks empty or truncated.
+- **Dangling `prev` pointers.** In a doubly linked list every edit touches two references per side.
+  Miss one and backward traversal disagrees with forward traversal.
+- **Assuming `O(1)` deletion.** It is `O(1)` *given the node*. If you only have a value, you paid
+  `O(n)` to find it first.

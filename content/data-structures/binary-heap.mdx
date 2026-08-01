@@ -1,0 +1,72 @@
+## What it is
+
+A binary heap answers one question fast: *what is the smallest (or largest) value here?* It is a
+complete binary tree — every level full except possibly the last, which fills left to right — with a
+weaker ordering rule than a BST.
+
+**The invariant:** every parent outranks both of its children. In a min-heap that means the parent
+is smaller; in a max-heap, larger. Crucially there is **no ordering between siblings**, which is why
+a heap is cheap to maintain and useless for sorted iteration.
+
+Because the tree is always complete, it needs no pointers at all. It lives in an array, where the
+children of index `i` sit at `2i+1` and `2i+2`, and the parent at `floor((i-1)/2)`.
+
+<Demo structure="binary-heap" />
+
+## How operations work
+
+### Peek
+
+The root is always the answer. `O(1)`, no work at all.
+
+### Insert (sift up)
+
+Append at the end — the only position that keeps the tree complete — then swap upward while the new
+value outranks its parent. The path from a leaf to the root is `log n` long, so that bounds the work.
+
+### Extract (sift down)
+
+Remove the root, move the *last* element into its place to keep the tree complete, then swap it
+downward with its better child until the invariant holds again.
+
+### Build heap (heapify)
+
+Sifting down from the last internal node backwards is `O(n)`, not `O(n log n)`. The reason is that
+most nodes are near the bottom and barely move: half the nodes are leaves and do nothing at all,
+a quarter can sift at most one level, and so on. Run the heapify algorithm and watch how little
+work the early nodes actually do.
+
+## Complexity
+
+<ComplexityTable structure="binary-heap" />
+
+## Algorithms on this structure
+
+**Heapify** is Floyd's bottom-up construction described above.
+
+**Heapsort** builds a heap, then repeatedly swaps the root to the end of the array and shrinks the
+live region by one. It sorts in place with `O(n log n)` worst-case time and `O(1)` extra space — the
+only common sort that gets both. Watch the sorted tail grow from the right as the heap shrinks.
+
+## When to use it, and when not to
+
+Use a heap for priority queues: task schedulers, Dijkstra's frontier, top-k selection, event
+simulation, merging sorted streams. Any time you repeatedly need the extreme element and do not care
+about the rest of the order.
+
+Do not use one when you need sorted iteration — the heap property says nothing about siblings, so
+walking the array gives you nothing useful. Do not use one for search either; finding an arbitrary
+value is `O(n)`.
+
+## Common pitfalls
+
+- **Index arithmetic.** `2i+1` / `2i+2` for children assumes 0-based indexing. One-based heaps use
+  `2i` / `2i+1`. Mixing the conventions is the classic heap bug.
+- **Sifting up when you should sift down.** Insert sifts up from a leaf; extract sifts down from the
+  root. They are not interchangeable.
+- **Forgetting to move the last element on extract.** Removing the root leaves a hole; the tree stops
+  being complete and the array indexing breaks.
+- **Expecting sorted order.** A min-heap's array is not sorted and never becomes sorted until you
+  actually run heapsort on it.
+- **Building with repeated inserts.** That is `O(n log n)`. Heapify the whole array instead when you
+  have all the data up front.

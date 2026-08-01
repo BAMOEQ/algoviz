@@ -1,0 +1,61 @@
+## What it is
+
+A stack is a sequence you may only touch at one end. Push adds to the top, pop removes from the top,
+peek looks without removing. That single restriction is what makes it useful: it forces
+last-in-first-out order, which is exactly the shape of nested things.
+
+**The invariant:** the only reachable element is the most recently pushed one. Nothing below the top
+can be read or removed until everything above it is gone.
+
+<Demo structure="stack" />
+
+## How operations work
+
+### Push and pop
+
+Both are `O(1)` and both touch only the top index. Backed by an array, push writes at `length` and
+pop reads at `length - 1` — no shifting, because neither end of the *middle* ever moves.
+
+### Peek
+
+Reads the top without changing the size. Useful precisely because the interesting question is
+usually "what am I currently inside of?" rather than "what is at position 4?".
+
+## Complexity
+
+<ComplexityTable structure="stack" />
+
+Search is the honest weak spot: to find an arbitrary value you must pop everything above it, which
+destroys the stack, or walk the backing array and break the abstraction.
+
+## Algorithms on this structure
+
+**Balanced parentheses** is the canonical use. Each opener is pushed; each closer must match the
+value on top. If it does not, the sequence is malformed — and the top of the stack is always the
+innermost unclosed bracket, which is precisely the one a closer has to match.
+
+**Postfix evaluation** works for the same reason. Operands accumulate; an operator pops exactly the
+operands it needs, which are always the most recent ones. No parentheses are needed because the
+order already encodes the grouping.
+
+Step through either demo and watch the stack depth rise and fall — that shape *is* the nesting
+structure of the input.
+
+## When to use it, and when not to
+
+Use a stack for anything nested or reversible: expression parsing, undo history, backtracking,
+depth-first traversal, and the call stack your language already gives you.
+
+Do not use one when you need fairness or arrival order — that is a queue. Do not use one when you
+need to inspect elements other than the top; you are describing an array.
+
+## Common pitfalls
+
+- **Popping an empty stack.** Every real implementation needs a defined answer: throw, or return a
+  sentinel. Silently returning `undefined` hides bugs one layer downstream.
+- **Forgetting the final emptiness check.** In bracket matching, consuming the whole input without a
+  mismatch is not success — leftover openers mean the sequence never closed.
+- **Confusing the top with the bottom.** Backed by an array, the top is the *last* index. Drawing it
+  at the top of the screen while indexing from 0 trips people up constantly.
+- **Recursion depth.** A recursive algorithm is a stack you did not allocate, and it runs out
+  earlier than a heap-allocated one.
