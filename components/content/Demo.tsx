@@ -13,6 +13,13 @@ import { getStructure } from '@/lib/registry';
 
 const ZERO_METRICS: Metrics = { comparisons: 0, swaps: 0, reads: 0, writes: 0 };
 
+/**
+ * Hoisted so the pre-trace state hands `usePlayer` one stable identity. An inline `[]` is a new
+ * array every render, which the player reads as "new trace" and resets against — a render-phase
+ * update that re-renders, re-allocates, and loops.
+ */
+const NO_STEPS: readonly Step[] = [];
+
 export interface DemoProps {
   /** Structure slug, e.g. "binary-search-tree". */
   structure: string;
@@ -46,7 +53,7 @@ export function Demo({ structure: slug, algorithm, compact = false }: DemoProps)
     return structure.runAlgorithm(chosen.id, seeded);
   }, [structure, chosen, seeded, showTrace]);
 
-  const steps: readonly Step[] = trace?.steps ?? [];
+  const steps: readonly Step[] = trace?.steps ?? NO_STEPS;
   const player = usePlayer(steps);
   const { current, index, playing, atStart, atEnd, seek, next, prev, toggle } = player;
 
